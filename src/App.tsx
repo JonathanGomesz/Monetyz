@@ -4,6 +4,7 @@ import type { Account, Tx, TxType } from "./types/finance";
 import { supabase } from "./lib/supabase";
 import { addTx, deleteTx, loadTxs } from "./lib/storage";
 import "./index.css";
+import logo from "./logo.svg";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -448,7 +449,15 @@ export default function App() {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-wrap items-start gap-4">
           <div>
-            <h1 className="text-5xl font-bold tracking-tight">Jay's Finances</h1>
+            <div className="flex items-center">
+              <img
+                src={logo}
+                alt="Monetyz"
+                className="h-[50px] w-[200px] object-contain drop-shadow-[0_0_18px_rgba(163,230,53,0.22)]"
+                loading="eager"
+                draggable={false}
+              />
+            </div>
             <p className="mt-3 text-zinc-400">Income • Expenses • Savings</p>
             <p className="mt-2 text-sm text-zinc-500">
               Cloud: {session ? "Connected ✅" : "Not signed in"}
