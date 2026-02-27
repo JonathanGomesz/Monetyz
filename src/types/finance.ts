@@ -1,4 +1,4 @@
-export type Account = "Main" | "Uni" | "Gear";
+export type Account = string;
 export type TxType = "income" | "expense" | "transfer";
 
 export type TxBase = {
