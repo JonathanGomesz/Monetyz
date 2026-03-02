@@ -33,6 +33,7 @@ type DbTxRow = {
 
 type AccountRow = {
   id?: string;
+  user_id?: string;
   name: string;
   created_at?: string;
   sort_order?: number | null;
@@ -257,7 +258,7 @@ export default function App() {
 
       const q1 = await supabase
         .from("accounts")
-        .select("id,name,created_at,sort_order,is_primary")
+        .select("id,user_id,name,created_at,sort_order,is_primary")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
 
@@ -267,7 +268,7 @@ export default function App() {
       if (!data) {
         const q2 = await supabase
           .from("accounts")
-          .select("id,name,created_at")
+          .select("id,user_id,name,created_at")
           .order("created_at", { ascending: true });
         if (q2.error) throw q2.error;
         data = q2.data ?? null;
@@ -276,6 +277,7 @@ export default function App() {
       const rows = (data ?? [])
         .map((r: any) => ({
           id: r.id ? String(r.id) : undefined,
+          user_id: r.user_id ? String(r.user_id) : undefined,
           name: String(r.name ?? "").trim(),
           created_at: r.created_at ? String(r.created_at) : undefined,
           sort_order: typeof r.sort_order === "number" ? r.sort_order : null,
@@ -286,6 +288,7 @@ export default function App() {
       // Seed if empty
       if (rows.length === 0) {
         const seedPayload = DEFAULT_ACCOUNTS.map((name, idx) => ({
+          user_id: session.user.id,
           name,
           sort_order: idx,
           is_primary: idx === 0,
@@ -297,7 +300,7 @@ export default function App() {
         // Reload after seed
         const { data: seeded, error: seededErr } = await supabase
           .from("accounts")
-          .select("id,name,created_at,sort_order,is_primary")
+          .select("id,user_id,name,created_at,sort_order,is_primary")
           .order("sort_order", { ascending: true })
           .order("created_at", { ascending: true });
 
@@ -306,6 +309,7 @@ export default function App() {
         const seededRows = (seeded ?? [])
           .map((r: any) => ({
             id: r.id ? String(r.id) : undefined,
+            user_id: r.user_id ? String(r.user_id) : undefined,
             name: String(r.name ?? "").trim(),
             created_at: r.created_at ? String(r.created_at) : undefined,
             sort_order: typeof r.sort_order === "number" ? r.sort_order : null,
@@ -345,10 +349,17 @@ export default function App() {
     setAccountsBusy(true);
     try {
       // Prefer is_primary updates
-      const { error: clearErr } = await supabase.from("accounts").update({ is_primary: false }).neq("name", "");
+      const { error: clearErr } = await supabase
+        .from("accounts")
+        .update({ is_primary: false })
+        .eq("user_id", session.user.id);
       if (clearErr) throw clearErr;
 
-      const { error: setErr } = await supabase.from("accounts").update({ is_primary: true }).eq("name", name);
+      const { error: setErr } = await supabase
+        .from("accounts")
+        .update({ is_primary: true })
+        .eq("user_id", session.user.id)
+        .eq("name", name);
       if (setErr) throw setErr;
 
       await refreshAccounts();
@@ -380,10 +391,10 @@ export default function App() {
     try {
       const { error } = await supabase.from("accounts").upsert(
         [
-          { name: a.name, sort_order: bOrder },
-          { name: b.name, sort_order: aOrder },
+          { user_id: session.user.id, name: a.name, sort_order: bOrder },
+          { user_id: session.user.id, name: b.name, sort_order: aOrder },
         ],
-        { onConflict: "name" }
+        { onConflict: "user_id,name" }
       );
       if (error) throw error;
 
@@ -1180,6 +1191,7 @@ export default function App() {
                     const nextOrder = accountRows.length ? (accountRows[accountRows.length - 1].sort_order ?? accountRows.length) + 1 : 0;
 
                     const { error } = await supabase.from("accounts").insert({
+                      user_id: session.user.id,
                       name: clean,
                       sort_order: nextOrder,
                       is_primary: false,
@@ -1249,7 +1261,7 @@ export default function App() {
                             if (!confirm(`Delete "${a}"?`)) return;
                             try {
                               setAccountsBusy(true);
-                              const { error } = await supabase.from("accounts").delete().eq("name", a);
+                              const { error } = await supabase.from("accounts").delete().eq("user_id", session.user.id).eq("name", a);
                               if (error) throw error;
                               await refreshAccounts();
                             } catch (e) {
