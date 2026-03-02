@@ -417,7 +417,7 @@ export default function App() {
   const [from, setFrom] = useState<Account>("Main");
   const [to, setTo] = useState<Account>("Uni");
 
-  const [category, setCategory] = useState<string>("Uncategorized");
+  const [category, setCategory] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [note, setNote] = useState<string>("");
   const [date, setDate] = useState<string>(todayISO());
@@ -638,7 +638,7 @@ export default function App() {
     setFrom(primary);
     setTo(secondary);
 
-    setCategory("Uncategorized");
+    setCategory("");
     setAmount("");
     setNote("");
     setDate(todayISO());
@@ -1434,9 +1434,9 @@ export default function App() {
                   onChange={(e) => setType(e.target.value as TxType)}
                   className="mt-2 w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-lime-400/20 focus:border-lime-400/30"
                 >
-                  <option value="income">income</option>
-                  <option value="expense">expense</option>
-                  <option value="transfer">transfer</option>
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
+                  <option value="transfer">Transfer</option>
                 </select>
               </div>
 
