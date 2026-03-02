@@ -1190,19 +1190,38 @@ export default function App() {
                     // Insert with sort_order at end
                     const nextOrder = accountRows.length ? (accountRows[accountRows.length - 1].sort_order ?? accountRows.length) + 1 : 0;
 
-                    const { error } = await supabase.from("accounts").insert({
+                    // Try full payload first (if your table has sort_order / is_primary).
+                    // If not, fall back to minimal columns so adding accounts still works.
+                    const fullPayload = {
                       user_id: session.user.id,
                       name: clean,
                       sort_order: nextOrder,
                       is_primary: false,
-                    });
-                    if (error) throw error;
+                    };
+
+                    const res = await supabase.from("accounts").insert(fullPayload);
+
+                    if (res.error) {
+                      const msg = String(res.error.message ?? res.error);
+                      const missingCols =
+                        msg.includes("sort_order") ||
+                        msg.includes("is_primary") ||
+                        msg.toLowerCase().includes("does not exist");
+
+                      if (!missingCols) throw res.error;
+
+                      const res2 = await supabase.from("accounts").insert({
+                        user_id: session.user.id,
+                        name: clean,
+                      });
+                      if (res2.error) throw res2.error;
+                    }
 
                     setNewAcct("");
                     await refreshAccounts();
                   } catch (e) {
                     console.error(e);
-                    alert("Failed to add account");
+                    alert(String((e as any)?.message ?? e ?? "Failed to add account"));
                   } finally {
                     setAccountsBusy(false);
                   }
@@ -1266,7 +1285,7 @@ export default function App() {
                               await refreshAccounts();
                             } catch (e) {
                               console.error(e);
-                              alert("Failed to delete account");
+                              alert(String((e as any)?.message ?? e ?? "Failed to delete account"));
                             } finally {
                               setAccountsBusy(false);
                             }
